@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { buildApp } from "../apps/backend/dist/server.js";
+import { buildApp } from "../../apps/backend/dist/server.js";
 
 type FastifyApp = Awaited<ReturnType<typeof buildApp>>;
 
