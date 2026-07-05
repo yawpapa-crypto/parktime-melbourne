@@ -5,8 +5,11 @@ import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { registerRoutes } from "./routes/index.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+// import.meta.url is empty in the Vercel CJS bundle; env vars come from the host there.
+if (import.meta.url) {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  dotenv.config({ path: path.resolve(dir, "../../../.env") });
+}
 dotenv.config();
 
 export async function buildApp(): Promise<FastifyInstance> {

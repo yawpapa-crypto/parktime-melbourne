@@ -1,4 +1,5 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage } from "node:http";
+import type { HTTPMethods } from "fastify";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { buildApp } from "../apps/backend/src/server.ts";
 
@@ -34,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url ?? "/";
 
   const response = await app.inject({
-    method: req.method ?? "GET",
+    method: (req.method ?? "GET") as HTTPMethods,
     url,
     headers: req.headers as Record<string, string>,
     payload,
