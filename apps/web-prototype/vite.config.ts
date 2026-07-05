@@ -20,6 +20,18 @@ export default defineConfig(({ mode }) => {
       },
     },
     assetsInclude: ["**/*.svg", "**/*.csv"],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("mapbox-gl")) return "mapbox";
+            if (id.includes("node_modules/react") || id.includes("node_modules/scheduler")) {
+              return "vendor";
+            }
+          },
+        },
+      },
+    },
     server: {
       port: 5173,
       strictPort: false,

@@ -1,0 +1,54 @@
+/* Mobile / touch-first readability and tap targets */
+@media (max-width: 768px), (pointer: coarse) {
+  :root {
+    --font-size: 18px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Prevent iOS zoom-on-focus — inputs must be ≥16px; we use 17px+ */
+  input,
+  textarea,
+  select {
+    font-size: max(17px, 1rem) !important;
+  }
+
+  .mobile-touch {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .mobile-body-text {
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+
+  .mobile-caption {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .mobile-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+}
+
+/* Installed PWA — hide browser chrome feel */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input,
+  textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+}

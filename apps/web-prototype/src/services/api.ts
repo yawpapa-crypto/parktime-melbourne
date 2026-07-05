@@ -57,15 +57,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  search(q: string, sessionToken?: string) {
+  search(q: string, sessionToken?: string, signal?: AbortSignal) {
     const params = new URLSearchParams({ q });
     if (sessionToken) params.set("sessionToken", sessionToken);
-    return request<{ results: SearchResult[]; error?: string }>(`/api/search?${params}`);
+    return request<{ results: SearchResult[]; error?: string }>(`/api/search?${params}`, { signal });
   },
-  retrieve(mapboxId: string, sessionToken?: string) {
+  retrieve(mapboxId: string, sessionToken?: string, signal?: AbortSignal) {
     const params = new URLSearchParams({ mapboxId });
     if (sessionToken) params.set("sessionToken", sessionToken);
-    return request<{ results: SearchResult[]; error?: string }>(`/api/search?${params}`);
+    return request<{ results: SearchResult[]; error?: string }>(`/api/search?${params}`, { signal });
   },
   nearby(opts: {
     latitude: number;
@@ -74,7 +74,7 @@ export const api = {
     minimumDuration?: number;
     freeOnly?: boolean;
     parkingTypes?: string;
-  }) {
+  }, signal?: AbortSignal) {
     const params = new URLSearchParams({
       latitude: String(opts.latitude),
       longitude: String(opts.longitude),
@@ -85,6 +85,7 @@ export const api = {
     if (opts.parkingTypes) params.set("parkingTypes", opts.parkingTypes);
     return request<{ results: NearbyBay[]; count: number; error?: string }>(
       `/api/parking/nearby?${params}`,
+      { signal },
     );
   },
   report(body: {

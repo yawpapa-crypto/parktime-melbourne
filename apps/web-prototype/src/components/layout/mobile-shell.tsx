@@ -8,11 +8,11 @@ interface BottomNavProps {
 }
 
 const tabs: { id: Screen; label: string; icon: (active: boolean) => React.ReactNode }[] = [
-  { id: "map", label: "Map", icon: (a) => <Map size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-  { id: "nearby", label: "Nearby", icon: (a) => <List size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-  { id: "saved", label: "Saved", icon: (a) => <Bookmark size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-  { id: "timer", label: "Timer", icon: (a) => <Timer size={22} strokeWidth={a ? 2.5 : 1.8} /> },
-  { id: "profile", label: "Profile", icon: (a) => <User size={22} strokeWidth={a ? 2.5 : 1.8} /> },
+  { id: "map", label: "Map", icon: (a) => <Map size={26} strokeWidth={a ? 2.5 : 1.8} /> },
+  { id: "nearby", label: "Nearby", icon: (a) => <List size={26} strokeWidth={a ? 2.5 : 1.8} /> },
+  { id: "saved", label: "Saved", icon: (a) => <Bookmark size={26} strokeWidth={a ? 2.5 : 1.8} /> },
+  { id: "timer", label: "Timer", icon: (a) => <Timer size={26} strokeWidth={a ? 2.5 : 1.8} /> },
+  { id: "profile", label: "Profile", icon: (a) => <User size={26} strokeWidth={a ? 2.5 : 1.8} /> },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -47,13 +47,13 @@ export function BottomNav({ active, onNavigate }: BottomNavProps) {
             onClick={() => onNavigate(tab.id)}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl transition-all",
+              "flex-1 flex flex-col items-center gap-1 py-2 rounded-xl transition-all mobile-touch",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               isActive ? "text-primary" : "text-[#9CA3AF] hover:text-gray-600",
             )}
           >
             {tab.icon(isActive)}
-            <span className="text-[10px] font-medium leading-none">{tab.label}</span>
+            <span className="text-xs font-semibold leading-none sm:text-[10px]">{tab.label}</span>
             {isActive && <span className="w-1 h-1 rounded-full bg-primary" aria-hidden="true" />}
           </button>
         );

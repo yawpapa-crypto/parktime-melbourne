@@ -1,17 +1,33 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, lazy, Suspense } from "react";
 import { useAppStore } from "@/context/app-store";
 import type { Screen, Sheet } from "@/types/parking";
 import { AppShell, BottomNav } from "@/components/layout/mobile-shell";
-import { OnboardingScreen } from "@/components/screens/onboarding-screen";
-import { MapScreen } from "@/components/screens/map-screen";
-import { NearbyScreen } from "@/components/screens/nearby-screen";
-import { SavedScreen } from "@/components/screens/saved-screen";
-import { TimerScreen } from "@/components/screens/timer-screen";
-import { ProfileScreen } from "@/components/screens/profile-screen";
-import { ScannerScreen } from "@/components/screens/scanner-screen";
+import { InstallBanner } from "@/components/ui/install-banner";
 import { BayDetailSheet } from "@/components/sheets/bay-detail-sheet";
 import { FilterSheet } from "@/components/sheets/filter-sheet";
 import { ReportSheet } from "@/components/sheets/report-sheet";
+
+const OnboardingScreen = lazy(() =>
+  import("@/components/screens/onboarding-screen").then((m) => ({ default: m.OnboardingScreen })),
+);
+const MapScreen = lazy(() =>
+  import("@/components/screens/map-screen").then((m) => ({ default: m.MapScreen })),
+);
+const NearbyScreen = lazy(() =>
+  import("@/components/screens/nearby-screen").then((m) => ({ default: m.NearbyScreen })),
+);
+const SavedScreen = lazy(() =>
+  import("@/components/screens/saved-screen").then((m) => ({ default: m.SavedScreen })),
+);
+const TimerScreen = lazy(() =>
+  import("@/components/screens/timer-screen").then((m) => ({ default: m.TimerScreen })),
+);
+const ProfileScreen = lazy(() =>
+  import("@/components/screens/profile-screen").then((m) => ({ default: m.ProfileScreen })),
+);
+const ScannerScreen = lazy(() =>
+  import("@/components/screens/scanner-screen").then((m) => ({ default: m.ScannerScreen })),
+);
 
 export default function App() {
   const {
@@ -76,22 +92,26 @@ export default function App() {
   return (
     <AppShell>
       {showOnboarding ? (
-        <OnboardingScreen
+        <Suspense fallback={<ScreenLoader />}>
+          <OnboardingScreen
           step={onbStep}
           onNext={() => {
             if (onbStep < 2) setOnbStep(onbStep + 1);
             else completeOnboarding();
           }}
           onSkip={completeOnboarding}
-        />
+          />
+        </Suspense>
       ) : (
         <>
+          <InstallBanner />
           <main
             className="flex-1 flex flex-col overflow-hidden relative"
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {screen === "map" && (
-              <MapScreen
+              <Suspense fallback={<ScreenLoader />}>
+                <MapScreen
                 onOpenFilter={() => setSheet("filter")}
                 sheetOpen={sheetOpen}
                 setSheetOpen={setSheetOpen}
@@ -99,20 +119,33 @@ export default function App() {
                   setSelectedBay(bay);
                   setSheet("detail");
                 }}
-              />
+                />
+              </Suspense>
             )}
             {screen === "nearby" && (
-              <NearbyScreen
+              <Suspense fallback={<ScreenLoader />}>
+                <NearbyScreen
                 onSelectBay={(bay) => {
                   setSelectedBay(bay);
                   setSheet("detail");
                 }}
-              />
+                />
+              </Suspense>
             )}
-            {screen === "saved" && <SavedScreen onNavigateToMap={() => setScreen("map")} />}
-            {screen === "timer" && <TimerScreen />}
+            {screen === "saved" && (
+              <Suspense fallback={<ScreenLoader />}>
+                <SavedScreen onNavigateToMap={() => setScreen("map")} />
+              </Suspense>
+            )}
+            {screen === "timer" && (
+              <Suspense fallback={<ScreenLoader />}>
+                <TimerScreen />
+              </Suspense>
+            )}
             {screen === "profile" && (
-              <ProfileScreen onOpenScanner={() => setSheet("scanner")} />
+              <Suspense fallback={<ScreenLoader />}>
+                <ProfileScreen onOpenScanner={() => setSheet("scanner")} />
+              </Suspense>
             )}
 
             {sheet === "detail" && selectedBay && (
@@ -132,14 +165,18 @@ export default function App() {
             {sheet === "report" && selectedBay && (
               <ReportSheet bay={selectedBay} onClose={() => setSheet(null)} />
             )}
-            {sheet === "scanner" && <ScannerScreen onClose={() => setSheet(null)} />}
+            {sheet === "scanner" && (
+              <Suspense fallback={null}>
+                <ScannerScreen onClose={() => setSheet(null)} />
+              </Suspense>
+            )}
           </main>
           <BottomNav active={screen} onNavigate={handleNavigate} />
           {activeSession && screen !== "timer" && (
             <button
               type="button"
               onClick={() => setScreen("timer")}
-              className="absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-40 bg-primary text-white rounded-2xl py-3 px-4 text-[13px] font-semibold shadow-lg"
+              className="absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-40 bg-primary text-white rounded-2xl py-3.5 px-4 text-base font-semibold shadow-lg mobile-touch"
             >
               Active session · tap to view timer
             </button>
@@ -147,5 +184,13 @@ export default function App() {
         </>
       )}
     </AppShell>
+  );
+}
+
+function ScreenLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-[#F7F9FC] text-base text-gray-500">
+      Loading…
+    </div>
   );
 }

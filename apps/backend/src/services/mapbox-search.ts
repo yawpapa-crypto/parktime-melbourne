@@ -107,7 +107,7 @@ export async function searchPlaces(q: string, sessionToken?: string): Promise<Se
     bbox,
     proximity,
     language: "en",
-    limit: "8",
+    limit: "6",
     types: "address,street,place,poi,locality,neighborhood",
   });
   if (sessionToken) params.set("session_token", sessionToken);
