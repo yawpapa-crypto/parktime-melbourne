@@ -1,0 +1,29 @@
+{
+  "name": "parktime-melbourne",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @parktime/backend & npm run dev -w @parktime/admin",
+    "dev:backend": "npm run dev -w @parktime/backend",
+    "dev:mobile": "npm run start -w @parktime/mobile",
+    "dev:admin": "npm run dev -w @parktime/admin",
+    "dev:web": "npm run dev -w @parktime/web-prototype",
+    "build": "npm run build -ws --if-present",
+    "test": "npm run test -ws --if-present",
+    "lint": "npm run lint -ws --if-present",
+    "migrate": "npm run migrate -w @parktime/database",
+    "import:melbourne": "npm run import:melbourne -w @parktime/backend",
+    "import:ascot-vale": "npm run import:ascot-vale -w @parktime/backend",
+    "import:altona": "npm run import:altona -w @parktime/backend",
+    "build:vercel": "npm run build -w @parktime/shared && npm run build -w @parktime/backend && npm run build -w @parktime/web-prototype",
+    "typecheck": "npm run typecheck -ws --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}

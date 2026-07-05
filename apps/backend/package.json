@@ -1,0 +1,37 @@
+{
+  "name": "@parktime/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "import:melbourne": "tsx src/workers/import-melbourne.ts",
+    "import:suburb": "tsx src/workers/import-suburb.ts",
+    "import:ascot-vale": "tsx src/workers/import-suburb.ts ascot-vale",
+    "import:altona": "tsx src/workers/import-suburb.ts altona"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@parktime/shared": "*",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "luxon": "^3.5.0",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.11",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

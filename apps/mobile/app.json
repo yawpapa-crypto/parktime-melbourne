@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "ParkTime Melbourne",
+    "slug": "parktime-melbourne",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "parktime",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "au.edu.scu.parktime",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ParkTime uses your location to find nearby parking."
+      }
+    },
+    "android": {
+      "package": "au.edu.scu.parktime",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "extra": {
+      "router": { "origin": false }
+    }
+  }
+}

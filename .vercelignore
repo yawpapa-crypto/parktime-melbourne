@@ -1,0 +1,11 @@
+data/imports/
+*.geojson
+.env
+.env.*
+!.env.example
+node_modules
+.expo
+dist
+coverage
+*.log
+.DS_Store
