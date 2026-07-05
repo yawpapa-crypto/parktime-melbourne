@@ -19,11 +19,12 @@
     "import:melbourne": "npm run import:melbourne -w @parktime/backend",
     "import:ascot-vale": "npm run import:ascot-vale -w @parktime/backend",
     "import:altona": "npm run import:altona -w @parktime/backend",
-    "build:vercel": "npm run build -w @parktime/shared && npm run build -w @parktime/backend && npm run build -w @parktime/web-prototype",
+    "build:vercel": "npm run build -w @parktime/shared && npm run build -w @parktime/backend && npm run build -w @parktime/web-prototype && node scripts/build-vercel-api.mjs",
     "typecheck": "npm run typecheck -ws --if-present"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
+    "esbuild": "^0.28.1",
     "typescript": "^5.7.3"
   }
 }

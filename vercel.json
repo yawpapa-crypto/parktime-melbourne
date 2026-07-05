@@ -6,13 +6,13 @@
   "outputDirectory": "apps/web-prototype/dist",
   "framework": null,
   "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 30,
-      "includeFiles": "{apps/backend/dist/**,packages/shared/dist/**}"
+    "api/server.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/health", "destination": "/api/health" },
+    { "source": "/health", "destination": "/api/server" },
+    { "source": "/api/(.*)", "destination": "/api/server" },
     { "source": "/((?!api/|health|assets/|.*\\..*).*)", "destination": "/index.html" }
   ],
   "headers": [

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { buildApp } from "../../apps/backend/dist/server.js";
+import { buildApp } from "../../apps/backend/src/server.js";
 
 type FastifyApp = Awaited<ReturnType<typeof buildApp>>;
 
@@ -8,7 +8,7 @@ declare global {
   var __parktimeApp: FastifyApp | undefined;
 }
 
-export async function handleRequest(req: IncomingMessage, res: ServerResponse) {
+async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (!global.__parktimeApp) {
     global.__parktimeApp = await buildApp();
     await global.__parktimeApp.ready();
@@ -17,7 +17,9 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   global.__parktimeApp.server.emit("request", req, res);
 }
 
-export const vercelConfig = {
+export default handleRequest;
+
+export const config = {
   api: {
     bodyParser: false,
   },

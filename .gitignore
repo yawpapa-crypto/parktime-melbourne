@@ -1,5 +1,7 @@
 node_modules/
 dist/
+api/server.js
+api/server.js.map
 .expo/
 .expo-shared/
 *.tsbuildinfo
@@ -9,3 +11,5 @@ dist/
 .env.*.local
 coverage/
 *.log
+.vercel
+.env*
