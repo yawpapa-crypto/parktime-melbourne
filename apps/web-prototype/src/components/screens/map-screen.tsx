@@ -27,8 +27,11 @@ function bayBadgeLabel(bay: NearbyBay): string {
 }
 
 export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenProps) {
-  const sessionToken = useRef(String(Date.now()));
+  const sessionToken = useRef(crypto.randomUUID?.() ?? String(Date.now()));
+  const skipSuggestRef = useRef(false);
   const [query, setQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [resolvingPlace, setResolvingPlace] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [destination, setDestination] = useState<MapCenter | null>(null);
   const [bays, setBays] = useState<NearbyBay[]>([]);
@@ -67,6 +70,10 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
   }, [center.latitude, center.longitude, loadNearby]);
 
   useEffect(() => {
+    if (skipSuggestRef.current) {
+      skipSuggestRef.current = false;
+      return;
+    }
     if (query.trim().length < 2) {
       setSuggestions([]);
       return;
@@ -83,20 +90,48 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
     return () => window.clearTimeout(timer);
   }, [query]);
 
+  const goToCoordinates = useCallback(
+    async (latitude: number, longitude: number) => {
+      setDestination({ latitude, longitude });
+      setSelected(null);
+      setSheetOpen(true);
+      await loadNearby(latitude, longitude);
+    },
+    [loadNearby, setSheetOpen],
+  );
+
   const selectPlace = async (place: SearchResult) => {
-    setQuery(place.placeFormatted || place.name);
+    skipSuggestRef.current = true;
+    setSearchFocused(false);
     setSuggestions([]);
-    let target = place;
+    setQuery(place.name);
+    setResolvingPlace(true);
+    setError(null);
+
     try {
       const res = await api.retrieve(place.id, sessionToken.current);
-      if (res.results[0]) target = res.results[0];
-      sessionToken.current = String(Date.now());
-    } catch {
-      // suggest-only coords are ok for some result types
+      const target = res.results[0];
+      if (
+        target?.latitude == null ||
+        target?.longitude == null ||
+        Number.isNaN(target.latitude) ||
+        Number.isNaN(target.longitude)
+      ) {
+        throw new Error("No coordinates returned for this place");
+      }
+
+      sessionToken.current = crypto.randomUUID?.() ?? String(Date.now());
+      await goToCoordinates(target.latitude, target.longitude);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`Could not locate "${place.name}". Tap a result from the list and try again. ${msg}`);
+    } finally {
+      setResolvingPlace(false);
     }
-    setDestination({ latitude: target.latitude, longitude: target.longitude });
-    setSheetOpen(true);
-    await loadNearby(target.latitude, target.longitude);
+  };
+
+  const selectFirstSuggestion = () => {
+    if (suggestions[0]) void selectPlace(suggestions[0]);
   };
 
   const locateMe = () => {
@@ -107,11 +142,7 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setDestination({ latitude: lat, longitude: lng });
-        setSheetOpen(true);
-        await loadNearby(lat, lng);
+        await goToCoordinates(pos.coords.latitude, pos.coords.longitude);
         setLocating(false);
       },
       () => {
@@ -150,6 +181,14 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  selectFirstSuggestion();
+                }
+              }}
               placeholder="Search street, suburb or destination"
               className="flex-1 min-w-0 text-[14px] text-[#111827] placeholder:text-gray-400 bg-transparent outline-none border-none"
               aria-label="Search destination"
@@ -157,6 +196,9 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
               autoCorrect="off"
               spellCheck={false}
             />
+            {resolvingPlace ? (
+              <span className="text-[11px] text-primary font-medium shrink-0">Locating…</span>
+            ) : null}
             {query ? (
               <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
                 <X size={14} className="text-gray-400" />
@@ -168,7 +210,7 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
           </IconButton>
         </div>
 
-        {suggestions.length > 0 && (
+        {searchFocused && suggestions.length > 0 && (
           <div className="mt-2 bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden max-h-48 overflow-y-auto pointer-events-auto">
             {suggestions.map((s) => (
               <button
@@ -190,10 +232,11 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
               key={preset.label}
               type="button"
               onClick={() => {
+                skipSuggestRef.current = true;
                 setQuery(preset.query);
-                setDestination({ latitude: preset.latitude, longitude: preset.longitude });
-                setSheetOpen(true);
-                void loadNearby(preset.latitude, preset.longitude);
+                setSearchFocused(false);
+                setSuggestions([]);
+                void goToCoordinates(preset.latitude, preset.longitude);
               }}
               className="shrink-0 rounded-full bg-white/95 border border-black/10 px-3 py-1.5 text-[12px] font-semibold text-primary shadow-sm"
             >
@@ -285,7 +328,7 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
           ) : bays.length === 0 ? (
             <EmptyState
               title="No parking found"
-              description="Try searching another Melbourne street or destination."
+              description="Try another street or suburb — Ascot Vale and Altona are supported."
               className="px-4"
             />
           ) : !sheetOpen ? (

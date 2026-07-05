@@ -5,8 +5,8 @@ export interface SearchResult {
   name: string;
   placeFormatted: string;
   featureType: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface RuleResult {

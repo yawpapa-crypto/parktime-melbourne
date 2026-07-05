@@ -26,9 +26,10 @@ export default function MapScreen() {
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const sessionToken = useRef(String(Date.now()));
+  const skipSuggestRef = useRef(false);
 
   const center = useMemo(
-    () => destination ?? { latitude: -37.8136, longitude: 144.9631 },
+    () => destination ?? { latitude: -37.8136, longitude: 144.9631, name: "Melbourne", placeFormatted: "Melbourne", featureType: "place", id: "default" },
     [destination],
   );
 
@@ -52,6 +53,10 @@ export default function MapScreen() {
   }, [center.latitude, center.longitude, loadNearby]);
 
   useEffect(() => {
+    if (skipSuggestRef.current) {
+      skipSuggestRef.current = false;
+      return;
+    }
     if (query.length < 2) {
       setSuggestions([]);
       return;
@@ -68,17 +73,38 @@ export default function MapScreen() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const goToCoordinates = useCallback(
+    async (lat: number, lng: number, label: SearchResult) => {
+      setDestination(label);
+      setSelected(null);
+      cameraRef.current?.setCamera({
+        centerCoordinate: [lng, lat],
+        zoomLevel: 15,
+        animationDuration: 800,
+      });
+      await loadNearby(lat, lng);
+    },
+    [loadNearby],
+  );
+
   const selectPlace = async (place: SearchResult) => {
     Keyboard.dismiss();
-    setQuery(place.placeFormatted || place.name);
+    skipSuggestRef.current = true;
+    setQuery(place.name);
     setSuggestions([]);
-    setDestination(place);
-    cameraRef.current?.setCamera({
-      centerCoordinate: [place.longitude, place.latitude],
-      zoomLevel: 15,
-      animationDuration: 800,
-    });
-    await loadNearby(place.latitude, place.longitude);
+    setError(null);
+
+    try {
+      const res = await api.retrieve(place.id, sessionToken.current);
+      const target = res.results[0];
+      if (target?.latitude == null || target?.longitude == null) {
+        throw new Error("No coordinates for this place");
+      }
+      sessionToken.current = String(Date.now());
+      await goToCoordinates(target.latitude, target.longitude, target);
+    } catch (e) {
+      setError(`Could not locate "${place.name}". ${String(e)}`);
+    }
   };
 
   const locateMe = async () => {

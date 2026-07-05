@@ -137,8 +137,9 @@ export interface SearchResult {
   name: string;
   placeFormatted: string;
   featureType: string;
-  latitude: number;
-  longitude: number;
+  /** Present after retrieve; suggest-only results omit coordinates. */
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface CouncilCoverage {
