@@ -23,6 +23,7 @@
     "typecheck": "npm run typecheck -ws --if-present"
   },
   "devDependencies": {
+    "@vercel/node": "^5.8.22",
     "concurrently": "^9.1.2",
     "esbuild": "^0.28.1",
     "typescript": "^5.7.3"
