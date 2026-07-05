@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, "..");
 
 await esbuild.build({
   entryPoints: [path.join(root, "api/entry.ts")],
+  absWorkingDir: root,
   bundle: true,
   platform: "node",
   target: "node20",
@@ -14,6 +15,7 @@ await esbuild.build({
   outfile: path.join(root, "api/server.js"),
   sourcemap: true,
   logLevel: "info",
+  packages: "bundle",
 });
 
 console.log("Bundled API server → api/server.js");
