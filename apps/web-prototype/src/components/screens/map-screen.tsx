@@ -12,6 +12,8 @@ import { IconButton } from "@/components/ui/icon-button";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { api, type NearbyBay, type SearchResult } from "@/services/api";
 import { SUBURB_PRESETS } from "@/config/suburb-presets";
+import { useAppStore } from "@/context/app-store";
+import { applyClientFilters, filtersToApiParams } from "@/lib/filters";
 
 const MELBOURNE = { latitude: -37.8136, longitude: 144.9631 };
 
@@ -19,6 +21,7 @@ interface MapScreenProps {
   onOpenFilter: () => void;
   sheetOpen: boolean;
   setSheetOpen: (open: boolean) => void;
+  onSelectBay: (bay: NearbyBay) => void;
 }
 
 function bayBadgeLabel(bay: NearbyBay): string {
@@ -26,7 +29,8 @@ function bayBadgeLabel(bay: NearbyBay): string {
   return rule.length > 18 ? `${rule.slice(0, 16)}…` : rule;
 }
 
-export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenProps) {
+export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen, onSelectBay }: MapScreenProps) {
+  const { filters, setMapCenter } = useAppStore();
   const sessionToken = useRef(crypto.randomUUID?.() ?? String(Date.now()));
   const skipSuggestRef = useRef(false);
   const [query, setQuery] = useState("");
@@ -49,8 +53,13 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
     setLoading(true);
     setError(null);
     try {
-      const res = await api.nearby({ latitude: lat, longitude: lng, radius: 800 });
-      setBays(res.results);
+      const res = await api.nearby({
+        latitude: lat,
+        longitude: lng,
+        radius: 800,
+        ...filtersToApiParams(filters),
+      });
+      setBays(applyClientFilters(res.results, filters));
       if (!res.results.length) setSelected(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -63,7 +72,7 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     loadNearby(center.latitude, center.longitude);
@@ -121,6 +130,7 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
       }
 
       sessionToken.current = crypto.randomUUID?.() ?? String(Date.now());
+      setMapCenter({ latitude: target.latitude, longitude: target.longitude });
       await goToCoordinates(target.latitude, target.longitude);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -164,7 +174,7 @@ export function MapScreen({ onOpenFilter, sheetOpen, setSheetOpen }: MapScreenPr
           selectedId={selected?.id ?? null}
           onSelectBay={(bay) => {
             setSelected(bay);
-            setSheetOpen(true);
+            onSelectBay(bay);
           }}
           className="h-full w-full"
         />

@@ -244,6 +244,7 @@ export async function registerRoutes(app: FastifyInstance) {
       endedAt: z.string().optional(),
       status: z.enum(["active", "ended", "cancelled"]).optional(),
       expectedEndAt: z.string().optional(),
+      reminders: z.array(z.boolean()).optional(),
     }).parse(request.body);
 
     const res = await query(
@@ -251,15 +252,82 @@ export async function registerRoutes(app: FastifyInstance) {
          ended_at = COALESCE($2, ended_at),
          status = COALESCE($3, status),
          expected_end_at = COALESCE($4, expected_end_at),
+         reminders = COALESCE($5, reminders),
          updated_at = NOW()
        WHERE id = $1 RETURNING *`,
-      [id, body.endedAt ?? null, body.status ?? null, body.expectedEndAt ?? null],
+      [
+        id,
+        body.endedAt ?? null,
+        body.status ?? null,
+        body.expectedEndAt ?? null,
+        body.reminders ? JSON.stringify(body.reminders) : null,
+      ],
     );
     if (!res.rows[0]) {
       reply.code(404);
       return { error: "Session not found" };
     }
     return res.rows[0];
+  });
+
+  app.get("/api/saved", async (request, reply) => {
+    const schema = z.object({ deviceId: z.string().min(1) });
+    const { deviceId } = schema.parse(request.query);
+    const res = await query(
+      `SELECT id, label, category, bay_id AS "bayId", street_description AS "streetDescription",
+              suburb, ST_Y(location::geometry) AS latitude, ST_X(location::geometry) AS longitude
+       FROM saved_parking_locations WHERE device_id = $1 ORDER BY created_at DESC`,
+      [deviceId],
+    );
+    return { places: res.rows };
+  });
+
+  app.post("/api/saved", async (request) => {
+    const body = z.object({
+      deviceId: z.string(),
+      label: z.string(),
+      category: z.string().optional(),
+      bayId: z.string().uuid().optional(),
+      street: z.string().optional(),
+      suburb: z.string().optional(),
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+    }).parse(request.body);
+
+    const res = await query(
+      `INSERT INTO saved_parking_locations (device_id, label, category, bay_id, street_description, suburb, location)
+       VALUES ($1,$2,$3,$4,$5,$6,
+         CASE WHEN $7::float IS NOT NULL AND $8::float IS NOT NULL
+           THEN ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography
+           ELSE NULL END)
+       RETURNING id, label, category, bay_id AS "bayId", street_description AS "streetDescription",
+                 suburb, ST_Y(location::geometry) AS latitude, ST_X(location::geometry) AS longitude`,
+      [
+        body.deviceId,
+        body.label,
+        body.category ?? null,
+        body.bayId ?? null,
+        body.street ?? null,
+        body.suburb ?? null,
+        body.latitude ?? null,
+        body.longitude ?? null,
+      ],
+    );
+    return res.rows[0];
+  });
+
+  app.delete("/api/saved/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { deviceId } = z.object({ deviceId: z.string() }).parse(request.query);
+    const res = await query(
+      `DELETE FROM saved_parking_locations WHERE id = $1 AND device_id = $2 RETURNING id`,
+      [id, deviceId],
+    );
+    if (!res.rows[0]) {
+      reply.code(404);
+      return { error: "Not found" };
+    }
+    return { ok: true };
   });
 
   app.get("/api/councils/coverage", async () => {

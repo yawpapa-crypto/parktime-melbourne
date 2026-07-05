@@ -15,6 +15,8 @@ export interface RuleResult {
   leaveBy: string | null;
   paymentRequired: boolean;
   estimatedCost: number | null;
+  maximumMinutes: number | null;
+  remainingMinutes: number | null;
   nextRule: string | null;
   confidence: string;
   source: string;
@@ -32,6 +34,17 @@ export interface NearbyBay {
   source: string;
   sourceUpdatedAt: string | null;
   rule: RuleResult;
+}
+
+export interface SavedPlaceRecord {
+  id: string;
+  label: string;
+  category: string | null;
+  bayId: string | null;
+  streetDescription: string | null;
+  suburb: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -54,14 +67,74 @@ export const api = {
     if (sessionToken) params.set("sessionToken", sessionToken);
     return request<{ results: SearchResult[]; error?: string }>(`/api/search?${params}`);
   },
-  nearby(opts: { latitude: number; longitude: number; radius?: number }) {
+  nearby(opts: {
+    latitude: number;
+    longitude: number;
+    radius?: number;
+    minimumDuration?: number;
+    freeOnly?: boolean;
+    parkingTypes?: string;
+  }) {
     const params = new URLSearchParams({
       latitude: String(opts.latitude),
       longitude: String(opts.longitude),
       radius: String(opts.radius ?? 500),
     });
+    if (opts.minimumDuration) params.set("minimumDuration", String(opts.minimumDuration));
+    if (opts.freeOnly) params.set("freeOnly", "true");
+    if (opts.parkingTypes) params.set("parkingTypes", opts.parkingTypes);
     return request<{ results: NearbyBay[]; count: number; error?: string }>(
       `/api/parking/nearby?${params}`,
+    );
+  },
+  report(body: {
+    bayId?: string;
+    issueType: string;
+    note?: string;
+    deviceId?: string;
+    photoUrl?: string;
+  }) {
+    return request<unknown>(`/api/parking/reports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+  createSession(body: Record<string, unknown>) {
+    return request<{ id: string }>(`/api/parking/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+  updateSession(id: string, body: Record<string, unknown>) {
+    return request<unknown>(`/api/parking/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+  councilCoverage() {
+    return request<{ councils: { councilName: string; baysCount: number }[] }>(
+      `/api/councils/coverage`,
+    );
+  },
+  listSavedPlaces(deviceId: string) {
+    return request<{ places: SavedPlaceRecord[] }>(
+      `/api/saved?deviceId=${encodeURIComponent(deviceId)}`,
+    );
+  },
+  savePlace(body: Record<string, unknown>) {
+    return request<SavedPlaceRecord>(`/api/saved`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
+  deleteSavedPlace(id: string, deviceId: string) {
+    return request<{ ok: boolean }>(
+      `/api/saved/${id}?deviceId=${encodeURIComponent(deviceId)}`,
+      { method: "DELETE" },
     );
   },
 };
